@@ -1,0 +1,5 @@
+strategy,cumulative_return,annualised_return,annualised_volatility,sharpe_ratio,sortino_ratio,max_drawdown,max_drawdown_duration
+Best Fixed,0.635893,0.185194,0.119207,1.4853,2.5366,-0.077362,135.0
+Recent Gating,0.635893,0.185194,0.119207,1.4853,2.5366,-0.077362,135.0
+T-VAE,0.635893,0.185194,0.119207,1.4853,2.5366,-0.077362,135.0
+Proposed RAG,0.635893,0.185194,0.119207,1.4853,2.5366,-0.077362,135.0
