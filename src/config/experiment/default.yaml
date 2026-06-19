@@ -1,0 +1,6 @@
+# @package _group_
+defaults:
+  - /config.yaml
+
+experiment_name: "default"
+description: "Baseline experiment with default parameters"
