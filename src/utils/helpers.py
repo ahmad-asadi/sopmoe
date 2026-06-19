@@ -1,11 +1,9 @@
-import os
 import random
 from pathlib import Path
 from typing import Any
 
 import hydra
 import numpy as np
-import torch
 from omegaconf import DictConfig
 
 from src.utils.logging import get_logger
@@ -21,16 +19,26 @@ def load_config(config_path: str = "src/config", config_name: str = "config") ->
     return cfg
 
 
+def _import_torch():
+    import torch
+    return torch
+
+
 def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    try:
+        torch = _import_torch()
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except ImportError:
+        pass
     logger.info(f"Random seed set to {seed}")
 
 
 def save_checkpoint(state: dict, filepath: str | Path) -> None:
+    torch = _import_torch()
     path = Path(filepath)
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(state, str(path))
@@ -38,6 +46,7 @@ def save_checkpoint(state: dict, filepath: str | Path) -> None:
 
 
 def load_checkpoint(filepath: str | Path, device: str | None = None) -> dict[str, Any]:
+    torch = _import_torch()
     path = Path(filepath)
     if not path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {path}")
