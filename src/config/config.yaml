@@ -15,9 +15,21 @@ window:
   H: 20
 
 embedding:
-  input_dim: 128
-  latent_dim: 16
-  vae_hidden_dims: [64, 32]
+  vae:
+    latent_dim_tech: 16
+    latent_dim_mkt: 16
+    d_model: 64
+    nhead: 4
+    num_layers: 2
+    dropout: 0.1
+    beta: 0.001
+  train:
+    learning_rate: 1.0e-4
+    batch_size: 64
+    epochs: 50
+    save_every: 10
+    n_samples: 2000
+    checkpoint_dir: "checkpoints/vae"
 
 experts:
   list:
