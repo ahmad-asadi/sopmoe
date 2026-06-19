@@ -1,0 +1,4 @@
+embedding:
+  vae:
+    latent_dim_tech: 32
+    latent_dim_mkt: 32

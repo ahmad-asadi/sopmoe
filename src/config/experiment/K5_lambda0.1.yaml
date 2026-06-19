@@ -1,0 +1,4 @@
+retrieval:
+  K: 5
+uncertainty:
+  lambda: 0.1
