@@ -6,8 +6,7 @@ dist/
 build/
 
 # Data
-data/raw/
-data/processed/
+data/
 
 # Checkpoints
 checkpoints/

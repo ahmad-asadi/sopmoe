@@ -49,10 +49,25 @@ def build_sop_prompt(
 
     prompt = f"""[SYSTEM] You are a high-precision financial performance analyst. Your task is to generate a structured Statement of Performance (SoP) for a specific expert model in a given market regime.
 
-STRICT OUTPUT REQUIREMENT:
-You MUST return ONLY a raw JSON object. Do NOT include any thinking process, preamble, explanation, or markdown code blocks (e.g., no ```json ... ```). The response must be directly parseable by json.loads().
+[OUTPUT STRUCTURE]
+You must provide your final answer as a raw JSON object. If you use a thinking process, ensure it is separated from the final JSON output. The JSON must be the only part of the response that follows the thinking process and must be directly parseable by json.loads().
 
-GUIDELINES:
+The JSON object must contain exactly these keys:
+1. "regime_description": A detailed technical description of the current market regime. Include specific aspects such as volatility levels and trend characteristics (e.g., "High volatility bearish regime with significant downward pressure and erratic price swings").
+2. "performance_reasoning": A clear and concise analysis of WHY the model is performing as it is. If performance is poor, analyze the reasons (e.g., "The model's heavy tilt towards momentum assets is causing significant drawdowns in this mean-reverting market"). If performance is good, explain why it's succeeding.
+3. "sop_text": A highly formatted, structured summary. Use a clear layout like:
+   --- REGIME ANALYSIS ---
+   [Your analysis here]
+   --- PERFORMANCE EVALUATION ---
+   [Your evaluation here]
+   --- SUITABILITY VERDICT ---
+   [Your verdict here]
+4. "calculated_rho": Performance score [0, 1].
+5. "confidence_bound_epsilon": Uncertainty bound [0, 1].
+6. "regime_separation_margin_tau": Regime separation margin [0, 1].
+7. "tail_optimal_flag": Boolean (true/false) indicating if this expert is optimal for tail events.
+
+[GUIDELINES]
 1. Empirical Alignment: Base the assessment strictly on observed historical returns and drawdowns.
 2. Conservative Margining: Apply a risk penalty to experts with limited track records or high uncertainty.
 3. Tail Separation: Explicitly identify if the expert excels or fails under extreme market conditions.
@@ -73,19 +88,10 @@ GUIDELINES:
 - Estimated Uncertainty: {uncertainty_estimate}
 
 TASK:
-1. Analyze the current market regime based on volatility and trend.
-2. Evaluate why the expert's specific allocation is resulting in the observed performance (reasoning).
-3. Synthesize this into a structured SoP summary.
-
-OUTPUT FORMAT:
-Return a JSON object with these exact keys:
-- "regime_description": A concise technical description of the current market regime and its primary characteristics.
-- "performance_reasoning": A short analysis of why the model is performing well or poorly in this specific regime (e.g., "The high allocation to BTC is driving returns during this bullish trend").
-- "sop_text": A structured summary containing: [Regime Analysis] -> [Performance Evaluation] -> [Suitability Verdict].
-- "calculated_rho": Performance score [0, 1].
-- "confidence_bound_epsilon": Uncertainty bound [0, 1].
-- "regime_separation_margin_tau": Regime separation margin [0, 1].
-- "tail_optimal_flag": Boolean indicating if this expert is optimal for tail events.
+1. Carefully analyze the provided Market State and Expert Performance Metrics.
+2. Determine the specific characteristics of the market regime.
+3. Reason through the link between the expert's allocation and its performance in this regime.
+4. Generate the final JSON output following the [OUTPUT STRUCTURE] precisely.
 """
     return prompt
 
@@ -93,6 +99,7 @@ Return a JSON object with these exact keys:
 def parse_sop_response(response_text: str) -> dict[str, Any]:
     """Parse the LLM response into a structured SoP dict.
     
+    Handles responses that may contain thinking process before the final JSON object.
     Falls back to default values if parsing fails.
     """
     import json
@@ -110,17 +117,25 @@ def parse_sop_response(response_text: str) -> dict[str, Any]:
 
     try:
         cleaned = response_text.strip()
-        # Remove markdown blocks if present despite instructions
-        if cleaned.startswith("```"):
-            cleaned = re.sub(r"^```(?:json)?\n?", "", cleaned)
-            cleaned = re.sub(r"\n?```$", "", cleaned)
         
-        json_match = re.search(r"\{.*\}", cleaned, re.DOTALL)
-        if json_match:
-            parsed = json.loads(json_match.group())
+        # Extract the JSON block. 
+        # If there's a thinking process, we look for the last occurrence of a JSON-like structure.
+        # We look for the last '{' and the last '}' to isolate the final JSON object.
+        start_idx = cleaned.rfind('{')
+        end_idx = cleaned.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1 and start_idx < end_idx:
+            json_str = cleaned[start_idx : end_idx + 1]
+            
+            # Handle potential markdown wrapping within the extracted string
+            json_str = re.sub(r"^```(?:json)?\n?", "", json_str)
+            json_str = re.sub(r"\n?```$", "", json_str)
+            
+            parsed = json.loads(json_str)
             defaults.update(parsed)
         else:
-            defaults["sop_text"] = response_text.strip()
+            defaults["sop_text"] = cleaned
+            
         return defaults
     except (json.JSONDecodeError, ValueError, TypeError):
         defaults["sop_text"] = response_text.strip() or "SoP generation failed"
