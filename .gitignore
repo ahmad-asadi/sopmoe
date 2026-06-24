@@ -35,3 +35,4 @@ Thumbs.db
 .envrc
 .venv/
 venv/
+plots/raw_data/

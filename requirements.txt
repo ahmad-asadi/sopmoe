@@ -6,7 +6,7 @@ scipy>=1.7
 scikit-learn>=1.0
 
 # RL / FinRL
-finrl>=1.0.1
+finrl>=0.3.7
 gym>=0.21
 stable-baselines3>=1.6
 
@@ -30,3 +30,4 @@ seaborn>=0.11
 
 # Utils
 tqdm>=4.64
+yfinance

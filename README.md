@@ -7,6 +7,7 @@ Implementation of the framework described in the paper. Modular pipeline: data l
 ```
 ├── config/experiment/          # Experiment override configs (K, λ, LLM model)
 ├── scripts/
+│   ├── download_data.py        # Fetch raw market data
 │   ├── run_backtest.py         # Single backtest (Tables 3–6)
 │   ├── run_experiments.py      # Multi-run sensitivity analysis harness
 │   ├── run_indexing.py         # Offline indexing pipeline
@@ -90,13 +91,30 @@ plots/experiments/
 ```
 
 ### Single Backtest Run
+ 
+ ```bash
+ python scripts/run_backtest.py
+ python scripts/run_backtest.py --mock-llm --no-plots
+ ```
+ 
+ ### Data Fetching
+ 
+ Download raw data for Crypto, NASDAQ, and Forex:
+ 
+ ```bash
+ export PYTHONPATH=$PYTHONPATH:. && python scripts/download_data.py --start 2024-01-01 --end 2024-03-01
+ ```
+ 
+ ### Data Visualization
+ 
+ Generate OHLC charts for all downloaded symbols:
+ 
+ ```bash
+ export PYTHONPATH=$PYTHONPATH:. && python scripts/visualize_raw_data.py
+ ```
+ 
+ ### Hydra Multirun (Alternative)
 
-```bash
-python scripts/run_backtest.py
-python scripts/run_backtest.py --mock-llm --no-plots
-```
-
-### Hydra Multirun (Alternative)
 
 ```bash
 python run.py retrieval.K=5,10,20 uncertainty.lambda=0.1,0.5,1.0 --multirun

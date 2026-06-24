@@ -31,11 +31,15 @@ class DataLoader:
                 df = pd.read_csv(path, parse_dates=["Date"])
                 logger.info(f"Loaded {coin} from {path}")
             else:
-                logger.warning(f"{path} not found, generating synthetic data for {coin}")
-                df = self._generate_sample_data(coin)
+                logger.error(f"Data file {path} not found. Please run scripts/download_data.py first.")
+                continue
+            
             df["symbol"] = coin
             dfs.append(df)
-
+        
+        if not dfs:
+            raise FileNotFoundError("No data files were found in the data directory.")
+            
         df = pd.concat(dfs, ignore_index=True)
         df = df.rename(columns={
             "Date": "date", "Open": "open", "High": "high",
@@ -63,21 +67,9 @@ class DataLoader:
         logger.info(f"After handling missing — {len(valid_dates)} valid dates, {len(symbols)} symbols")
         return df
 
-    def _generate_sample_data(self, coin: str, seed: int = 42) -> pd.DataFrame:
-        rng = np.random.default_rng(seed + hash(coin) % 10000)
-        idx = pd.date_range(self.start_date, self.end_date, freq="D")
-        n = len(idx)
-        price = 100.0 * np.exp(np.cumsum(rng.normal(0.0005, 0.02, n)))
-        o = price * (1 + rng.normal(0, 0.005, n))
-        h = np.maximum(o, price) * (1 + abs(rng.normal(0, 0.005, n)))
-        l = np.minimum(o, price) * (1 - abs(rng.normal(0, 0.005, n)))
-        v = rng.lognormal(15, 1, n)
-        return pd.DataFrame({
-            "Date": idx, "Open": o, "High": h, "Low": l, "Close": price, "Volume": v,
-        })
-
     @staticmethod
     def split_data(
+
         df: pd.DataFrame,
         train_end: str = "2020-12-31",
         val_end: str = "2021-12-31",
