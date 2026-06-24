@@ -98,7 +98,7 @@ class VectorDatabase:
         extra: dict[str, Any] | None = None,
     ) -> int:
         """Add a single record to both FAISS and SQLite.
-
+        
         Returns the FAISS / SQLite id assigned to the record.
         """
         if self.con is None:
@@ -109,7 +109,7 @@ class VectorDatabase:
         self.index.add(embedding)
         self.con.execute(
             """
-            INSERT INTO index_records
+            INSERT OR REPLACE INTO index_records
                 (id, faiss_id, timestamp, expert_id, sop_text,
                  cumulative_return, sharpe, drawdown, uncertainty_score, extra_json)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -130,6 +130,7 @@ class VectorDatabase:
         self.con.commit()
         self._next_id += 1
         return faiss_id
+
 
     def add_records_batch(
         self,

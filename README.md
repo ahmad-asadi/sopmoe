@@ -93,11 +93,21 @@ plots/experiments/
 ```
 
 ### Single Backtest Run
- 
- ```bash
- python scripts/run_backtest.py
- python scripts/run_backtest.py --mock-llm --no-plots
- ```
+  
+  ```bash
+  python scripts/run_backtest.py
+  ```
+
+  ### Offline Indexing
+  
+  Build the regime-aware index with LLM-generated Statements of Performance (SoP):
+  
+  ```bash
+  export PYTHONPATH=$PYTHONPATH:. && ./venv/bin/python scripts/run_indexing.py
+  ```
+  
+  The index is stored in `data/index/faiss.index` and `data/index/metadata.db`.
+
  
  ### Data Fetching
  

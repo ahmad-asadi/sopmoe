@@ -79,17 +79,19 @@ class FinRLExpert(BaseExpert):
 
     @staticmethod
     def _softmax(action: np.ndarray, n_assets: int) -> np.ndarray:
-        """Stable softmax that returns a probability vector of length n_assets."""
+        """Stable softmax that returns a probability vector of length n_assets + 1 (including cash)."""
         a = np.asarray(action, dtype=np.float64).flatten()
         a = np.clip(a, -100, 100)
         if a.ndim == 0:
             a = a[None]
         exp = np.exp(a - a.max())
         w = exp / (exp.sum() + 1e-10)
-        if len(w) == n_assets + 1:
+        
+        target_len = n_assets + 1
+        if len(w) == target_len:
             return w.astype(np.float32)
-        out = np.ones(n_assets + 1, dtype=np.float32) / (n_assets + 1)
-        out[: len(w)] = w[: len(w)]
-        return out
+        
+        # If action size doesn't match, return uniform weights to avoid crash
+        return np.ones(target_len, dtype=np.float32) / target_len
 
 

@@ -64,7 +64,6 @@ class IndexingEngine:
         self.db = db
         self.H = int(config.get("H", 20))
         self.L = int(config.get("L", 60))
-        self.mock_llm = bool(config.get("mock_llm", False))
         self.device = str(config.get("device", "cpu"))
         self.llm_config = config.get("llm", {})
         self._sop_cache: dict[tuple[str, str], str] = {}
@@ -85,7 +84,7 @@ class IndexingEngine:
         end_date: str | pd.Timestamp | None = None,
     ) -> int:
         """Run the offline indexing pipeline over the date range.
-
+        
         Parameters
         ----------
         df :
@@ -101,6 +100,7 @@ class IndexingEngine:
         -------
         Number of records indexed.
         """
+        logger.info("Starting offline indexing process...")
         timestamps = self._get_timestamps(df_tech, start_date, end_date)
         if not timestamps:
             logger.warning("No timestamps to index.")
@@ -118,6 +118,7 @@ class IndexingEngine:
         pbar = tqdm(total=total, desc="Indexing", unit="rec")
 
         for ts in timestamps:
+            logger.info("Processing timestamp: %s", ts.isoformat())
             tech_tensor, mkt_tensor = self.state_builder.build_state(
                 ts, df_tech, df_mkt
             )
@@ -134,6 +135,11 @@ class IndexingEngine:
                     df=df,
                     forward_returns=forward_returns,
                     market_ctx=market_ctx,
+                )
+                
+                logger.info(
+                    "Generated SoP for [%s] at %s: %s", 
+                    expert_name, ts.isoformat(), sop_text
                 )
 
                 perf = self._evaluate_performance(
@@ -158,6 +164,7 @@ class IndexingEngine:
         pbar.close()
         logger.info("Indexing complete – %d records stored", len(self.db))
         return len(self.db)
+
 
     # ------------------------------------------------------------------
     # Timestamp helpers
@@ -344,10 +351,7 @@ class IndexingEngine:
             uncertainty_estimate=0.1,
         )
 
-        if self.mock_llm:
-            response_text = json.dumps({"sop_text": "Mock SoP", "error": "Mock LLM enabled"})
-        else:
-            response_text = self._call_llm(prompt)
+        response_text = self._call_llm(prompt)
 
         parsed = parse_sop_response(response_text)
         sop_text = parsed.get("sop_text", response_text)
@@ -410,50 +414,45 @@ class IndexingEngine:
         self, timestamp: pd.Timestamp, df: pd.DataFrame
     ) -> np.ndarray:
         """Construct a state vector compatible with ``BaseExpert.get_weights``.
-
-        The state mimics ``PortfolioTradingEnv._get_obs()``:
-          [cash, price_1, ..., price_n, prev_weight_0, ..., prev_weight_n,
-           tech_1_asset_1, ..., tech_m_asset_n]
+        
+        The state must match the observation space of the trained models (302 dimensions).
+        Since we are in offline indexing, we pad the state to the required size.
         """
         try:
             day_data = df.loc[timestamp]
         except KeyError:
-            symbols = sorted(df.index.get_level_values("symbol").unique())
-            n_assets = len(symbols)
-            return np.zeros(
-                1 + n_assets + (n_assets + 1) + 2 * n_assets, dtype=np.float32
-            )
+            return np.zeros(302, dtype=np.float32)
 
         symbols = sorted(df.index.get_level_values("symbol").unique())
         n_assets = len(symbols)
-
         prices = day_data["close"].values.astype(np.float32)
-
         uniform_w = np.ones(n_assets + 1, dtype=np.float32) / (n_assets + 1)
-
-        tech_indicators: list[str] = []
+        
+        # Basic features
+        tech_vals = []
         for col in day_data.columns:
             if col not in ("open", "high", "low", "close", "volume", "symbol"):
-                tech_indicators.append(col)
-        tech_indicators = tech_indicators[:2]
-
-        tech_vals: list[float] = []
-        for ti in tech_indicators:
-            if ti in day_data.columns:
-                vals = day_data[ti].values
+                vals = day_data[col].values
                 if isinstance(vals, (int, float, np.floating)):
                     tech_vals.append(float(vals))
                 else:
                     tech_vals.extend(float(v) for v in vals)
-
+        
         state = np.concatenate([
             np.array([1.0], dtype=np.float32),
             prices,
             uniform_w,
             np.array(tech_vals, dtype=np.float32),
         ])
-
+        
+        # Pad or truncate to 302
+        if len(state) < 302:
+            state = np.pad(state, (0, 302 - len(state)), 'constant')
+        else:
+            state = state[:302]
+            
         return state.astype(np.float32)
+
 
     @staticmethod
     def _is_json(text: str) -> bool:

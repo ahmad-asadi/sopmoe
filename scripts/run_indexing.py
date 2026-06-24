@@ -41,8 +41,12 @@ def build_expert_registry(cfg) -> ExpertRegistry:
     # Use FinRLExpert and load models from checkpoints directory
     checkpoint_dir = Path("checkpoints")
     for name in cfg.experts.list:
-        model_path = checkpoint_dir / name
-        registry.register(FinRLExpert(name=name, model_path=model_path, n_assets=n_assets))
+        # Match filename case and extension (e.g., 'a2c' -> 'A2C.zip')
+        model_path = checkpoint_dir / f"{name.upper()}.zip"
+        if model_path.exists():
+            registry.register(FinRLExpert(name=name, model_path=model_path, n_assets=n_assets))
+        else:
+            logger.warning("Expert model not found: %s", model_path)
 
     logger.info("Registered %d experts", len(registry))
     return registry
@@ -50,7 +54,6 @@ def build_expert_registry(cfg) -> ExpertRegistry:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Offline indexing pipeline")
-    parser.add_argument("--mock-llm", action="store_true", help="Skip real LLM calls")
     parser.add_argument(
         "--start-date",
         default=None,
@@ -75,7 +78,6 @@ def main() -> None:
     set_seed(cfg.seed)
 
     logger.info("Configuration loaded")
-    logger.info("mock_llm = %s", args.mock_llm)
 
     # ------------------------------------------------------------------
     # Data loading & feature engineering
@@ -172,7 +174,6 @@ def main() -> None:
         config={
             "H": cfg.window.H,
             "L": L,
-            "mock_llm": args.mock_llm,
             "device": "cuda" if torch.cuda.is_available() else "cpu",
             "llm": {
                 "model_name": cfg.llm.model_name,

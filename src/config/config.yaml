@@ -46,9 +46,9 @@ experts:
     tau: 0.005
 
 llm:
-  model_name: "gpt-4"
-  api_base: null
-  api_key: ${oc.env:LLM_API_KEY, ""}
+  model_name: "openai/Google/Gemma4-E4B"
+  api_base: "http://saca-api.inside.sahab.ir:3100/v1"
+  api_key: "sk-4IWPsIu46oKs13De2pqADQ"
   temperature: 0.7
   max_tokens: 1024
 
