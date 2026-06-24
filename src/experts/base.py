@@ -162,16 +162,30 @@ class PortfolioTradingEnv(gym.Env):
         if isinstance(close, (int, float, np.floating)):
             prices = np.array([close], dtype=np.float32)
             tech_values = np.concatenate(
-                [np.array([row[t]], dtype=np.float32) for t in self.tech_indicator_list]
+                [np.array([row.get(t, 0.0)], dtype=np.float32) for t in self.tech_indicator_list]
             )
         else:
             prices = close.values.astype(np.float32)
-            tech_values = np.concatenate(
-                [row[t].values.astype(np.float32) for t in self.tech_indicator_list]
-            )
+            # Correctly handle tech indicator values by ensuring they are arrays and not NaN
+            tech_vals_list = []
+            for t in self.tech_indicator_list:
+                val = row.get(t)
+                if val is None:
+                    tech_vals_list.append(np.zeros(len(prices), dtype=np.float32))
+                elif hasattr(val, "values"):
+                    tech_vals_list.append(val.values.astype(np.float32))
+                elif isinstance(val, (int, float, np.floating)):
+                    tech_vals_list.append(np.full(len(prices), float(val), dtype=np.float32))
+                else:
+                    tech_vals_list.append(np.zeros(len(prices), dtype=np.float32))
+            
+            tech_values = np.concatenate(tech_vals_list)
+        
+        # Final NaN cleanup to prevent model collapse
         cash_arr = np.array([self.cash / self.initial_amount], dtype=np.float32)
         obs = np.concatenate([cash_arr, prices, self.current_weights, tech_values])
-        return obs.astype(np.float32)
+        return np.nan_to_num(obs, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
+
 
     def _get_info(self):
         return {"portfolio_value": self.portfolio_value, "step": self.day}

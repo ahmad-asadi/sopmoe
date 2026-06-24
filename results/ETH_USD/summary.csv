@@ -1,0 +1,5 @@
+strategy,cumulative_return,annualised_return,annualised_volatility,sharpe_ratio,sortino_ratio,max_drawdown,max_drawdown_duration
+a2c,-0.110554,-0.039636,0.288008,0.0037,0.005,-0.467298,728.0
+ppo,-0.130603,-0.047165,0.29443,-0.0167,-0.0223,-0.481619,728.0
+ddpg,-0.110787,-0.039723,0.288776,0.0041,0.0056,-0.467675,728.0
+sac,0.101961,0.034084,0.378002,0.2771,0.3953,-0.431592,584.0

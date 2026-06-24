@@ -36,3 +36,6 @@ Thumbs.db
 .venv/
 venv/
 plots/raw_data/
+
+# Evaluations
+evaluations/

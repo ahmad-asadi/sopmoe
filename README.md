@@ -8,6 +8,8 @@ Implementation of the framework described in the paper. Modular pipeline: data l
 ├── config/experiment/          # Experiment override configs (K, λ, LLM model)
 ├── scripts/
 │   ├── download_data.py        # Fetch raw market data
+│   ├── train_experts.py        # Production training for DRL experts
+│   ├── run_expert_backtest.py # Granular evaluation of expert models
 │   ├── run_backtest.py         # Single backtest (Tables 3–6)
 │   ├── run_experiments.py      # Multi-run sensitivity analysis harness
 │   ├── run_indexing.py         # Offline indexing pipeline

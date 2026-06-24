@@ -26,18 +26,6 @@ from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Default SoP used when mock_llm is enabled
-_MOCK_SOP = json.dumps({
-    "calculated_rho": 0.65,
-    "confidence_bound_epsilon": 0.12,
-    "regime_separation_margin_tau": 0.08,
-    "tail_optimal_flag": True,
-    "sop_text": (
-        "The expert demonstrates moderate risk-adjusted performance "
-        "with a Sharpe ratio above the baseline. Conservative margining "
-        "applies a mild penalty. Tail exposure remains within acceptable bounds."
-    ),
-})
 
 
 class IndexingEngine:
@@ -357,7 +345,7 @@ class IndexingEngine:
         )
 
         if self.mock_llm:
-            response_text = _MOCK_SOP
+            response_text = json.dumps({"sop_text": "Mock SoP", "error": "Mock LLM enabled"})
         else:
             response_text = self._call_llm(prompt)
 
@@ -384,7 +372,7 @@ class IndexingEngine:
             return response.choices[0].message.content or ""
         except Exception as exc:
             logger.warning("LLM call failed: %s – using fallback SoP", exc)
-            return _MOCK_SOP
+            return json.dumps({"sop_text": "Error generating SoP", "error": str(exc)})
 
     # ------------------------------------------------------------------
     # Market context

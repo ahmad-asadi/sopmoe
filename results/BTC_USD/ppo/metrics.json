@@ -1,0 +1,9 @@
+{
+    "cumulative_return": 0.023646,
+    "annualised_return": 0.0081,
+    "annualised_volatility": 0.224029,
+    "sharpe_ratio": 0.1481,
+    "sortino_ratio": 0.1967,
+    "max_drawdown": -0.397751,
+    "max_drawdown_duration": 615
+}

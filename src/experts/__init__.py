@@ -12,11 +12,9 @@ Provides:
 """
 
 from src.experts.base import BaseExpert, PortfolioTradingEnv
-from src.experts.finrl_expert import DRL_AGENTS, DummyDRLExpert, FinRLExpert
-from src.experts.milp_expert import MILPExpert
-from src.experts.alpha_mix_rl import AlphaMixRLExpert
-from src.experts.tac_expert import TACExpert
+from src.experts.finrl_expert import DRL_AGENTS, FinRLExpert
 from src.experts.registry import ExpertRegistry
+
 from src.experts.train import train_all_drl_agents
 
 __all__ = [

@@ -93,16 +93,3 @@ class FinRLExpert(BaseExpert):
         return out
 
 
-# ---------------------------------------------------------------------------
-# Helper to create a dummy model (for testing / placeholders)
-# ---------------------------------------------------------------------------
-class DummyDRLExpert(BaseExpert):
-    """Placeholder DRL expert that returns uniform weights."""
-
-    def __init__(self, name: str = "dummy", n_assets: int = 5) -> None:
-        self.name = name
-        self.n_assets = n_assets
-
-    def get_weights(self, state: np.ndarray) -> np.ndarray:
-        w = np.ones(self.n_assets + 1, dtype=np.float32)
-        return w / w.sum()

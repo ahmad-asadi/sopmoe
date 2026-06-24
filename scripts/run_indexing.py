@@ -24,7 +24,7 @@ import torch
 from src.data import DataLoader, FeatureEngineer, StateBuilder
 from src.embedding.utils import load_vae_model
 from src.experts.registry import ExpertRegistry
-from src.experts.finrl_expert import DummyDRLExpert
+from src.experts.finrl_expert import FinRLExpert
 from src.indexing.database import VectorDatabase
 from src.indexing.engine import IndexingEngine
 from src.utils.helpers import load_config, set_seed
@@ -38,9 +38,11 @@ def build_expert_registry(cfg) -> ExpertRegistry:
     registry = ExpertRegistry()
     n_assets = len(cfg.data.coin_list)
 
-    # Use dummy experts for now (replace with FinRLExpert when models exist)
+    # Use FinRLExpert and load models from checkpoints directory
+    checkpoint_dir = Path("checkpoints")
     for name in cfg.experts.list:
-        registry.register(DummyDRLExpert(name=name, n_assets=n_assets))
+        model_path = checkpoint_dir / name
+        registry.register(FinRLExpert(name=name, model_path=model_path, n_assets=n_assets))
 
     logger.info("Registered %d experts", len(registry))
     return registry
